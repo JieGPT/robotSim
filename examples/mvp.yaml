@@ -1,0 +1,51 @@
+name: "mvp_panda_demo"
+description: "2-week MVP demo: Panda robot pick-and-place with collision and joint-limit checks"
+
+robot:
+  urdf: "models/fr3_panda.urdf"
+  base_position: [0.0, 0.0, 0.0]
+  end_effector: "panda_hand_tcp"
+  joint_config:
+    velocity_limits: [2.175, 2.175, 2.175, 2.175, 2.175, 2.175, 2.175]
+    acceleration_limits: [15.0, 7.5, 10.0, 12.5, 15.0, 20.0, 20.0]
+
+workcell:
+  fixtures:
+    - name: "table"
+      type: "box"
+      position: [0.6, 0.0, 0.0]
+      dimensions: [1.0, 0.8, 0.05]
+  obstacles:
+    - name: "safety_cage"
+      type: "box"
+      position: [0.0, -0.6, 0.5]
+      dimensions: [0.4, 0.1, 1.0]
+
+task:
+  steps:
+    - move: PTP
+      target: [0.0, -30.0, 60.0, -90.0, 0.0, 45.0, 0.0]
+      velocity: 1.0
+      acceleration: 10.0
+    - move: PTP
+      target: [10.0, -60.0, 40.0, -120.0, 20.0, 70.0, 30.0]
+      velocity: 1.0
+      acceleration: 10.0
+    - wait: 0.5
+    - move: PTP
+      target: [-5.0, -20.0, 50.0, -110.0, 10.0, 60.0, 15.0]
+      velocity: 1.0
+      acceleration: 10.0
+    - wait: 0.3
+    - move: PTP
+      target: [0.0, 0.0, 0.0, -180.0, 0.0, 90.0, 0.0]
+      velocity: 1.5
+      acceleration: 15.0
+
+criteria:
+  - collision:
+      pairs: ["robot/*", "fixture/*", "robot/*", "obstacle/*"]
+      severity: error
+  - joint_limits:
+      margin_deg: 5.0
+      severity: warning

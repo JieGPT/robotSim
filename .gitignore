@@ -1,0 +1,8 @@
+# Ignore temporary generated files
+MUJOCO_LOG.TXT
+mjswan/
+viser/
+.env/
+.venv/
+__pycache__/
+*.pyc

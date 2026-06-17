@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="fr3_panda">
+  <link name="panda_link0">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+  <link name="panda_link1">
+    <inertial><origin xyz="0 0 0.07" rpy="0 0 0"/><mass value="0.3"/><inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/></inertial>
+  </link>
+  <joint name="joint1" type="revolute">
+    <parent link="panda_link0"/>
+    <child link="panda_link1"/>
+    <origin xyz="0 0 0.333" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.8973" upper="2.8973" effort="87" velocity="2.175"/>
+  </joint>
+  <link name="panda_link2">
+    <inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.4"/><inertia ixx="0.002" ixy="0" ixz="0" iyy="0.002" iyz="0" izz="0.002"/></inertial>
+  </link>
+  <joint name="joint2" type="revolute">
+    <parent link="panda_link1"/>
+    <child link="panda_link2"/>
+    <origin xyz="0 0 0" rpy="-1.5708 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.7628" upper="1.7628" effort="87" velocity="2.175"/>
+  </joint>
+  <link name="panda_link3">
+    <inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.4"/><inertia ixx="0.002" ixy="0" ixz="0" iyy="0.002" iyz="0" izz="0.002"/></inertial>
+  </link>
+  <joint name="joint3" type="revolute">
+    <parent link="panda_link2"/>
+    <child link="panda_link3"/>
+    <origin xyz="0 -0.316 0" rpy="1.5708 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.8973" upper="2.8973" effort="87" velocity="2.175"/>
+  </joint>
+  <link name="panda_link4">
+    <inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.4"/><inertia ixx="0.002" ixy="0" ixz="0" iyy="0.002" iyz="0" izz="0.002"/></inertial>
+  </link>
+  <joint name="joint4" type="revolute">
+    <parent link="panda_link3"/>
+    <child link="panda_link4"/>
+    <origin xyz="0.0825 0 0" rpy="1.5708 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.0718" upper="-0.0698" effort="87" velocity="2.175"/>
+  </joint>
+  <link name="panda_link5">
+    <inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.4"/><inertia ixx="0.002" ixy="0" ixz="0" iyy="0.002" iyz="0" izz="0.002"/></inertial>
+  </link>
+  <joint name="joint5" type="revolute">
+    <parent link="panda_link4"/>
+    <child link="panda_link5"/>
+    <origin xyz="-0.0825 0.384 0" rpy="-1.5708 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.8973" upper="2.8973" effort="12" velocity="2.61"/>
+  </joint>
+  <link name="panda_link6">
+    <inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.4"/><inertia ixx="0.002" ixy="0" ixz="0" iyy="0.002" iyz="0" izz="0.002"/></inertial>
+  </link>
+  <joint name="joint6" type="revolute">
+    <parent link="panda_link5"/>
+    <child link="panda_link6"/>
+    <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-0.0175" upper="3.7525" effort="12" velocity="2.61"/>
+  </joint>
+  <link name="panda_link7">
+    <inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.4"/><inertia ixx="0.002" ixy="0" ixz="0" iyy="0.002" iyz="0" izz="0.002"/></inertial>
+  </link>
+  <joint name="joint7" type="revolute">
+    <parent link="panda_link6"/>
+    <child link="panda_link7"/>
+    <origin xyz="0.088 0 0" rpy="1.5708 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.8973" upper="2.8973" effort="12" velocity="2.61"/>
+  </joint>
+  <link name="panda_link8">
+    <inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.1"/><inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/></inertial>
+  </link>
+  <joint name="joint8" type="fixed">
+    <parent link="panda_link7"/>
+    <child link="panda_link8"/>
+    <origin xyz="0 0 0.107" rpy="0 0 0"/>
+  </joint>
+  <link name="panda_hand_tcp">
+    <inertial><origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.01"/><inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/></inertial>
+  </link>
+  <joint name="tcp_joint" type="fixed">
+    <parent link="panda_link8"/>
+    <child link="panda_hand_tcp"/>
+    <origin xyz="0 0 0.1" rpy="0 0 0"/>
+  </joint>
+</robot>
