@@ -11,37 +11,29 @@ Tests:
 """
 
 import sys
-sys.path.insert(0, 'src')
+
+sys.path.insert(0, "src")
 
 import json
 import tempfile
-import numpy as np
 from pathlib import Path
 
 import mujoco
+import numpy as np
+
+from robot_validator.controller.joint_pos import JointPosPTP
 from robot_validator.scenario import (
     from_yaml,
     to_yaml,
-    ValidationScenario,
-    RobotConfig,
-    WorkcellConfig,
-    TaskConfig,
-    TaskStep,
-    CriterionConfig,
-)
-from robot_validator.robot import Robot
-from robot_validator.workcell import WorkcellBuilder
-from robot_validator.controller.joint_pos import JointPosPTP
-from robot_validator.validation.collision import CollisionCriterion
-from robot_validator.validation.kinematics import (
-    JointLimitCriterion,
-    JointLimitResult,
-    Severity,
 )
 from robot_validator.session import (
     SessionRunner,
     ValidationResult,
-    StepResult,
+)
+from robot_validator.validation.collision import CollisionCriterion
+from robot_validator.validation.kinematics import (
+    JointLimitCriterion,
+    Severity,
 )
 
 
@@ -65,9 +57,7 @@ def test_yaml_roundtrip():
 
 def test_simple_ptp():
     """Test that a simple PTP trajectory works."""
-    controller = JointPosPTP(
-        target=np.array([0.1, -0.1, 0.2, -0.3, 0.1, 0.2, 0.3])
-    )
+    controller = JointPosPTP(target=np.array([0.1, -0.1, 0.2, -0.3, 0.1, 0.2, 0.3]))
     controller._qpos_init = np.zeros(7)
     controller._calc_total_time()
 
@@ -76,7 +66,7 @@ def test_simple_ptp():
 
     steps = int(controller._total_time / 0.01)
     for _ in range(steps):
-        qpos = controller.step(0.01)
+        controller.step(0.01)
     assert controller.is_done
     print(f"✅ test_simple_ptp: PASSED ({steps} steps)")
 
@@ -176,8 +166,6 @@ def test_session_runner():
 def test_wait_step():
     """Test that WAIT steps hold position."""
     import tempfile
-    import os
-    from pathlib import Path
 
     # Use absolute URDF path since temp YAML is in /tmp/
     urdf = str(Path(__file__).parent.parent / "examples" / "models" / "fr3_panda.urdf")
@@ -194,9 +182,7 @@ task:
     - wait: 0.5
 criteria: []
 """
-    with tempfile.NamedTemporaryFile(
-        suffix=".yaml", mode="w", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w", delete=False) as f:
         f.write(yaml_content)
         temp_path = f.name
 

@@ -6,6 +6,7 @@ Usage:
     python main.py --visualize          # with viser 3D viewer
     python main.py --json > out.json    # JSON export
 """
+
 from robot_validator.cli import app
 
 if __name__ == "__main__":

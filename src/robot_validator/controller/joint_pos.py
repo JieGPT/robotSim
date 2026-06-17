@@ -1,6 +1,8 @@
 from __future__ import annotations
-from .base import ControllerBase
+
 import numpy as np
+
+from .base import ControllerBase
 
 
 class JointPosPTP(ControllerBase):

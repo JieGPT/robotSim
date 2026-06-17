@@ -1,17 +1,23 @@
 """Collision criterion — detect contacts between body pairs."""
+
 from __future__ import annotations
+
+import re
 from dataclasses import dataclass
+
 import mujoco
 import numpy as np
-import re
+
 
 @dataclass
 class CollisionResult:
     """Single contact between two geom bodies."""
+
     contact_pos: np.ndarray
-    body1: str          # first body name
-    body2: str          # second body name
-    dist: float         # penetration distance (negative = penetrating)
+    body1: str  # first body name
+    body2: str  # second body name
+    dist: float  # penetration distance (negative = penetrating)
+
 
 class CollisionCriterion:
     """Detect collisions by checking MuJoCo data.contact[] array."""
@@ -30,12 +36,14 @@ class CollisionCriterion:
             b1 = model.body(g1.bodyid[0]).name
             b2 = model.body(g2.bodyid[0]).name
             if self._matches(b1, b2):
-                contacts.append(CollisionResult(
-                    contact_pos=np.array(c.pos),
-                    body1=b1,
-                    body2=b2,
-                    dist=float(c.dist),
-                ))
+                contacts.append(
+                    CollisionResult(
+                        contact_pos=np.array(c.pos),
+                        body1=b1,
+                        body2=b2,
+                        dist=float(c.dist),
+                    )
+                )
         return contacts
 
     def _matches(self, b1: str, b2: str) -> bool:

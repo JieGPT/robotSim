@@ -14,7 +14,6 @@ import json
 import os
 import sys
 import tempfile
-import math
 from pathlib import Path
 
 import numpy as np
@@ -23,26 +22,20 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 import mujoco
+
+from robot_validator.controller.joint_pos import JointPosPTP
+from robot_validator.robot import Robot
 from robot_validator.scenario import (
     from_yaml,
     to_yaml,
-    ValidationScenario,
-    RobotConfig,
-    WorkcellConfig,
-    TaskConfig,
-    TaskStep,
-    CriterionConfig,
 )
-from robot_validator.robot import Robot
-from robot_validator.workcell import WorkcellBuilder
-from robot_validator.visualizer import ValidationVisualizer
-from robot_validator.controller.joint_pos import JointPosPTP
+from robot_validator.session import SessionRunner, StepResult, ValidationResult
 from robot_validator.validation.collision import CollisionCriterion, CollisionResult
 from robot_validator.validation.kinematics import (
     JointLimitCriterion,
     Severity,
 )
-from robot_validator.session import SessionRunner, ValidationResult, StepResult
+from robot_validator.workcell import WorkcellBuilder
 
 # ── Fixtures ──────────────────────────────────────────────────────────
 
@@ -60,6 +53,7 @@ def _safe_load_urdf(urdf_path: str) -> tuple[mujoco.MjModel, mujoco.MjData]:
 
 
 # ── 1. Scenario Loader ───────────────────────────────────────────────
+
 
 def test_load_yaml():
     s = from_yaml(str(EXAMPLES / "mvp.yaml"))
@@ -146,6 +140,7 @@ robot:
 
 # ── 2. Robot Loader ──────────────────────────────────────────────────
 
+
 def test_load_panda():
     robot = Robot.from_urdf(str(EXAMPLES / "models" / "fr3_panda.urdf"))
     assert robot.model is not None
@@ -163,6 +158,7 @@ def test_actuator_positions():
 
 
 # ── 3. Workcell Builder ──────────────────────────────────────────────
+
 
 def test_workcell_merge():
     robot = Robot.from_urdf(str(EXAMPLES / "models" / "fr3_panda.urdf"))
@@ -201,6 +197,7 @@ def test_workcell_with_mesh():
 
 # ── 4. Controller ────────────────────────────────────────────────────
 
+
 def test_ptp_simple():
     c = JointPosPTP(target=np.array([0.1, -0.1, 0.2, -0.3, 0.1, 0.0, 0.0]), vel=1, acc=5)
     c._qpos_init = np.zeros(7)
@@ -233,6 +230,7 @@ def test_ptp_nearby_target():
 
 
 # ── 5. Validation Criteria ───────────────────────────────────────────
+
 
 def test_collision_none():
     model, data = _safe_load_urdf(str(EXAMPLES / "models" / "fr3_panda.urdf"))
@@ -280,6 +278,7 @@ def test_collision_detection():
 
 # ── 6. Joint Limits ──────────────────────────────────────────────────
 
+
 def test_joint_limits_ok():
     """Home position should have no violations."""
     model, data = _safe_load_urdf(str(EXAMPLES / "models" / "fr3_panda.urdf"))
@@ -303,6 +302,7 @@ def test_joint_limits_violation():
 
 
 # ── 7. Session Runner ────────────────────────────────────────────────
+
 
 def test_session_run_full():
     runner = SessionRunner()
@@ -333,7 +333,7 @@ def test_session_run_empty_workcell():
     y = f"""
 name: "empty_workcell_test"
 robot:
-  urdf: "{str(EXAMPLES / 'models' / 'fr3_panda.urdf')}"
+  urdf: "{str(EXAMPLES / "models" / "fr3_panda.urdf")}"
 workcell:
   fixtures: []
   obstacles: []
@@ -354,12 +354,13 @@ task:
 
 # ── 8. Multi-step Scenario ───────────────────────────────────────────
 
+
 def test_multi_step_pass_then_fail():
     """Scenario with first step passing (home → safe), second step failing (beyond limit)"""
     y = f"""
 name: "pass_then_fail"
 robot:
-  urdf: "{str(EXAMPLES / 'models' / 'fr3_panda.urdf')}"
+  urdf: "{str(EXAMPLES / "models" / "fr3_panda.urdf")}"
 workcell: {{}}
 task:
   steps:

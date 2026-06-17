@@ -1,8 +1,11 @@
 """viser integration — render MuJoCo robot + workcell in 3D, GUI controls."""
+
 from __future__ import annotations
+
 import mujoco
 import numpy as np
 import trimesh
+
 import viser
 
 
@@ -32,12 +35,8 @@ class ValidationVisualizer:
             tm = self._trimesh_geom(i)
             if tm is not None:
                 pos = self._data.geom_xpos[i]  # numpy array
-                # Convert rotation matrix to quaternion (w, x, y, z)
-                r = np.linalg.svd(self._data.geom_xmat[i].reshape(3, 3))
                 quat = self._matrix_to_wxyz(self._data.geom_xmat[i].reshape(3, 3))
-                h = scene.add_mesh_trimesh(
-                    f"/geoms/{i}", mesh=tm, position=pos, wxyz=quat
-                )
+                h = scene.add_mesh_trimesh(f"/geoms/{i}", mesh=tm, position=pos, wxyz=quat)
                 self._meshes.append(h)
 
     @staticmethod
@@ -82,9 +81,7 @@ class ValidationVisualizer:
                 initial = float(self._data.qpos[qidx])
                 # Clamp initial to be within range
                 initial = max(lo, min(hi, initial))
-                s = gui.add_slider(
-                    label=j.name, min=lo, max=hi, step=0.1, initial_value=initial
-                )
+                s = gui.add_slider(label=j.name, min=lo, max=hi, step=0.1, initial_value=initial)
                 self._sliders[j.name] = (qidx, s)
 
     def launch(self, host="0.0.0.0", port=8080):

@@ -1,10 +1,14 @@
 """URDF loader — convert to MuJoCo MjModel."""
+
 from __future__ import annotations
+
 import xml.etree.ElementTree as ET
+
 import mujoco
 import numpy as np
 from scipy.spatial.transform import Rotation
 from yourdfpy import URDF
+
 
 def _pos(origin):
     if origin is None:
@@ -12,14 +16,17 @@ def _pos(origin):
     p = origin[:3, 3]
     return f"{p[0]} {p[1]} {p[2]}"
 
+
 def _quat(origin):
     if origin is None:
         return "0 0 0 1"
     q = Rotation.from_matrix(origin[:3, :3]).as_quat()
     return f"{q[0]} {q[1]} {q[2]} {q[3]}"
 
+
 class Robot:
     """Load a URDF, convert to MuJoCo MjModel, expose joint info."""
+
     def __init__(self, model, data, urdf):
         self.model = model
         self.data = data
@@ -57,7 +64,9 @@ class Robot:
         data = mujoco.MjData(model)
         return cls(model, data, urdf)
 
+
 __all__ = ["Robot"]
+
 
 def _build_mjcf(urdf, base_pos=(0, 0, 0)):
     root = ET.Element("mujoco")
@@ -82,6 +91,7 @@ def _build_mjcf(urdf, base_pos=(0, 0, 0)):
         motor.set("joint", jn)
     return ET.tostring(root, encoding="unicode")
 
+
 def _link_children(urdf):
     out = {}
     for jn, jo in urdf.joint_map.items():
@@ -90,6 +100,7 @@ def _link_children(urdf):
         if p and c:
             out.setdefault(p, []).append((jn, c))
     return out
+
 
 def _walk(parent_body, link_name, in_joint, urdf, children):
     link = urdf.link_map[link_name]
@@ -146,7 +157,7 @@ def _walk(parent_body, link_name, in_joint, urdf, children):
             ie.set("pos", _pos(link.inertial.origin))
         if link.inertial.inertia is not None:
             i = link.inertial.inertia
-            ie.set("diaginertia", f"{i[0,0]:.6f} {i[1,1]:.6f} {i[2,2]:.6f}")
+            ie.set("diaginertia", f"{i[0, 0]:.6f} {i[1, 1]:.6f} {i[2, 2]:.6f}")
 
     for cjin, clink in children.get(link_name, []):
         child = ET.SubElement(parent_body, "body")

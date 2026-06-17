@@ -1,8 +1,10 @@
 from __future__ import annotations
-from enum import Enum
+
 from dataclasses import dataclass
-import numpy as np
+from enum import Enum
+
 import mujoco
+import numpy as np
 
 
 class Severity(Enum):
@@ -35,51 +37,57 @@ class JointLimitCriterion:
             # Skip FREE and BALL joints (no range limits)
             if jnt.type in (mujoco.mjtJoint.mjJNT_FREE, mujoco.mjtJoint.mjJNT_BALL):
                 continue
-            
+
             # Only process joints with range limits (HINGE, SLIDE, SWING)
             lo, hi = jnt.range
             range_val = hi - lo
             if range_val == 0:
                 continue
-            
+
             qpos_adr = jnt.qposadr[0]
             q = qpos[qpos_adr]
             margin = self._margin * range_val
-            
+
             # Check hard violations first (beyond limits)
             if q < lo - 1e-6 or q > hi + 1e-6:
-                results.append(JointLimitResult(
-                    body=".",
-                    joint_name=jnt.name,
-                    current=float(q),
-                    limit=lo if q < lo else hi,
-                    margin=0.0,
-                    severity=Severity.ERROR
-                ))
+                results.append(
+                    JointLimitResult(
+                        body=".",
+                        joint_name=jnt.name,
+                        current=float(q),
+                        limit=lo if q < lo else hi,
+                        margin=0.0,
+                        severity=Severity.ERROR,
+                    )
+                )
             # Below lower limit with margin
             elif q < lo + margin:
-                results.append(JointLimitResult(
-                    body=".",
-                    joint_name=jnt.name,
-                    current=float(q),
-                    limit=lo,
-                    margin=float(margin),
-                    severity=Severity.WARNING
-                ))
+                results.append(
+                    JointLimitResult(
+                        body=".",
+                        joint_name=jnt.name,
+                        current=float(q),
+                        limit=lo,
+                        margin=float(margin),
+                        severity=Severity.WARNING,
+                    )
+                )
             # Above upper limit with margin
             elif q > hi - margin:
-                results.append(JointLimitResult(
-                    body=".",
-                    joint_name=jnt.name,
-                    current=float(q),
-                    limit=hi,
-                    margin=float(margin),
-                    severity=Severity.WARNING
-                ))
+                results.append(
+                    JointLimitResult(
+                        body=".",
+                        joint_name=jnt.name,
+                        current=float(q),
+                        limit=hi,
+                        margin=float(margin),
+                        severity=Severity.WARNING,
+                    )
+                )
         return results
 
     def _manipulability(self, model, data):
-        J = np.zeros((3, model.nv))
-        mujoco.mj_jacBodyCom(model, data, (0, 0, 0), J)
+        jac = np.zeros((3, model.nv))
+        mujoco.mj_jacBodyCom(model, data, (0, 0, 0), jac)
         # compute manipulability ellipsoid
-        return float(np.linalg.det(J @ J.T))
+        return float(np.linalg.det(jac @ jac.T))

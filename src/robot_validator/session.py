@@ -1,26 +1,27 @@
 """Session orchestrator — run scenario end-to-end."""
+
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from dataclasses import dataclass
-from typing import List, Optional
+from pathlib import Path
 
-import numpy as np
 import mujoco
+import numpy as np
 
-from .scenario import from_yaml, ValidationScenario, TaskStep, CriterionConfig
-from .robot import Robot, _build_mjcf
-from .workcell import WorkcellBuilder
 from .controller.joint_pos import JointPosPTP
+from .robot import Robot
+from .scenario import TaskStep, ValidationScenario, from_yaml
 from .validation.collision import CollisionCriterion
 from .validation.kinematics import JointLimitCriterion
 from .visualizer import ValidationVisualizer
+from .workcell import WorkcellBuilder
 
 
 @dataclass
 class StepResult:
     """Result for a single task step."""
+
     step_index: int
     step_type: str  # 'PTP' or 'WAIT'
     passed: bool
@@ -54,7 +55,7 @@ class ValidationResult:
     def __init__(self, name: str, scenario_path: str):
         self.name = name
         self.scenario_path = scenario_path
-        self.steps: List[StepResult] = []
+        self.steps: list[StepResult] = []
         self.total_collisions: int = 0
         self.total_joint_violations: int = 0
         self.passed: bool = True
@@ -88,31 +89,25 @@ class ValidationResult:
     def summary(self) -> str:
         """Print formatted summary of results."""
         lines = []
-        lines.append(f"\n{'='*60}")
+        lines.append(f"\n{'=' * 60}")
         lines.append(f"Validation Results: {self.name}")
-        lines.append(f"{'='*60}")
+        lines.append(f"{'=' * 60}")
         lines.append(f"Scenario: {self.scenario_path}")
         lines.append(f"Steps executed: {len(self.steps)}")
         lines.append(f"Total collisions: {self.total_collisions}")
         lines.append(f"Joint violations: {self.total_joint_violations}")
         lines.append(f"Overall: {'✅ PASS' if self.passed else '❌ FAIL'}")
-        lines.append(f"{'─'*60}")
+        lines.append(f"{'─' * 60}")
 
         for step in self.steps:
             status = "✅ PASS" if step.passed else "❌ FAIL"
-            lines.append(
-                f"Step {step.step_index} [{step.step_type}] {status}"
-            )
+            lines.append(f"Step {step.step_index} [{step.step_type}] {status}")
             if step.collision_count > 0:
-                lines.append(
-                    f"  ⚠️  {step.collision_count} collision(s) detected"
-                )
+                lines.append(f"  ⚠️  {step.collision_count} collision(s) detected")
             if step.joint_violations > 0:
-                lines.append(
-                    f"  ⚠️  {step.joint_violations} joint limit violation(s)"
-                )
+                lines.append(f"  ⚠️  {step.joint_violations} joint limit violation(s)")
 
-        lines.append(f"{'='*60}\n")
+        lines.append(f"{'=' * 60}\n")
         return "\n".join(lines)
 
 
@@ -120,11 +115,11 @@ class SessionRunner:
     """Orchestrate a complete simulation session from YAML or Scenario."""
 
     def __init__(self):
-        self._model: Optional[mujoco.MjModel] = None
-        self._data: Optional[mujoco.MjData] = None
-        self._robot: Optional[Robot] = None
-        self._visualizer: Optional[ValidationVisualizer] = None
-        self._results: Optional[ValidationResult] = None
+        self._model: mujoco.MjModel | None = None
+        self._data: mujoco.MjData | None = None
+        self._robot: Robot | None = None
+        self._visualizer: ValidationVisualizer | None = None
+        self._results: ValidationResult | None = None
 
     def run(
         self,
@@ -149,9 +144,7 @@ class SessionRunner:
             scenario = from_yaml(scenario_path)
             scenario_file = str(scenario_path)
 
-        self._results = ValidationResult(
-            name=scenario.name, scenario_path=scenario_file
-        )
+        self._results = ValidationResult(name=scenario.name, scenario_path=scenario_file)
 
         # Resolve URDF path
         # If it's already absolute, use it directly; otherwise resolve relative to YAML
@@ -173,9 +166,9 @@ class SessionRunner:
         # Build workcell and merge with robot
         workcell = WorkcellBuilder()
         if scenario.workcell:
-            for f in (scenario.workcell.fixtures or []):
+            for f in scenario.workcell.fixtures or []:
                 workcell.add_box(f["name"], f["position"], f["dimensions"])
-            for o in (scenario.workcell.obstacles or []):
+            for o in scenario.workcell.obstacles or []:
                 workcell.add_box(o["name"], o["position"], o["dimensions"])
 
         robot_xml = self._robot.xml
@@ -186,22 +179,16 @@ class SessionRunner:
 
         # Launch viser if requested
         if visualize:
-            self._visualizer = ValidationVisualizer(
-                self._model, self._data
-            )
+            self._visualizer = ValidationVisualizer(self._model, self._data)
             self._visualizer.launch()
 
         # Execute each task step
-        current_qpos = self._data.qpos.copy()[:self._robot.n_actuated_joints]
+        current_qpos = self._data.qpos.copy()[: self._robot.n_actuated_joints]
 
         for i, step in enumerate(scenario.task.steps):
-            step_result = self._execute_step(
-                i, step, dt, current_qpos
-            )
+            step_result = self._execute_step(i, step, dt, current_qpos)
             self._results.add_step(step_result)
-            current_qpos = step_result.details.get(
-                "final_qpos", current_qpos
-            )
+            current_qpos = step_result.details.get("final_qpos", current_qpos)
 
         return self._results
 
@@ -255,7 +242,7 @@ class SessionRunner:
 
         while not controller.is_done:
             new_qpos = controller.step(dt)
-            self._data.qpos[:self._robot.n_actuated_joints] = new_qpos
+            self._data.qpos[: self._robot.n_actuated_joints] = new_qpos
             mujoco.mj_step(self._model, self._data)
             steps_executed += 1
 
@@ -267,10 +254,7 @@ class SessionRunner:
             # Check joint limits
             jlc = JointLimitCriterion(margin=0.05)
             limit_results = jlc.check(self._model, self._data)
-            warnings_errors = [
-                r for r in limit_results
-                if r.severity.value >= 1
-            ]
+            warnings_errors = [r for r in limit_results if r.severity.value >= 1]
             violations += len(warnings_errors)
 
         result = StepResult(
