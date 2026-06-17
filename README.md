@@ -275,6 +275,10 @@ class ValidationResult:
 # Clone or navigate to project
 cd robot_simulator
 
+# Create virtual environment with uv
+uv venv --python 3.12
+source .venv/bin/activate
+
 # Install in editable mode
 uv pip install -e .
 
