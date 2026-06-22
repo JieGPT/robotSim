@@ -1,8 +1,9 @@
-"""URDF loader — convert to MuJoCo MjModel."""
+"""Robot loader — load URDF or MJCF and expose as MuJoCo MjModel."""
 
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 import mujoco
 import numpy as np
@@ -25,12 +26,13 @@ def _quat(origin):
 
 
 class Robot:
-    """Load a URDF, convert to MuJoCo MjModel, expose joint info."""
+    """Load a robot model from URDF or MJCF and expose joint info."""
 
-    def __init__(self, model, data, urdf):
+    def __init__(self, model, data, urdf=None, xml_string=None):
         self.model = model
         self.data = data
         self.urdf = urdf
+        self._xml_string = xml_string
 
     @property
     def joint_names(self):
@@ -50,6 +52,8 @@ class Robot:
 
     @property
     def xml(self):
+        if self._xml_string is not None:
+            return self._xml_string
         return _build_mjcf(self.urdf, (0, 0, 0))
 
     @property
@@ -63,6 +67,28 @@ class Robot:
         model = mujoco.MjModel.from_xml_string(xml)
         data = mujoco.MjData(model)
         return cls(model, data, urdf)
+
+    @classmethod
+    def from_mjcf(cls, path, base_position=(0, 0, 0)):
+        path = Path(path).resolve()
+        raw = path.read_text()
+        model = mujoco.MjModel.from_xml_path(str(path))
+        data = mujoco.MjData(model)
+        # Resolve meshdir to absolute so workcell merge can load from string
+        model_dir = path.parent.as_posix()
+        root = ET.fromstring(raw)
+        compiler = root.find("compiler")
+        if compiler is not None and compiler.get("meshdir"):
+            compiler.set("meshdir", (model_dir / Path(compiler.get("meshdir"))).as_posix())
+        raw = ET.tostring(root, encoding="unicode")
+        return cls(model, data, xml_string=raw)
+
+    @classmethod
+    def from_model_file(cls, path, base_position=(0, 0, 0)):
+        path = Path(path)
+        if path.suffix == ".xml":
+            return cls.from_mjcf(str(path), base_position)
+        return cls.from_urdf(str(path), base_position)
 
 
 __all__ = ["Robot"]

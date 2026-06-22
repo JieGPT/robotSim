@@ -56,7 +56,7 @@ def _load_demo_scenario(yaml_path: str | None = None) -> ValidationScenario:
 
     return ValidationScenario(
         name="demo_inline",
-        robot=RobotConfig(urdf="models/fr3_panda.urdf"),
+        robot=RobotConfig(model="models/franka_fr3/fr3.xml"),
         workcell=WorkcellConfig(
             fixtures=[
                 {
@@ -88,9 +88,9 @@ def _load_demo_scenario(yaml_path: str | None = None) -> ValidationScenario:
     )
 
 
-def _build_model(scenario: ValidationScenario, urdf_base: Path):
+def _build_model(scenario: ValidationScenario, model_base: Path):
     """Load robot + merge workcell → return (model, data, n_actuated)."""
-    robot = Robot.from_urdf(str(urdf_base / scenario.robot.urdf))
+    robot = Robot.from_model_file(str(model_base / scenario.robot.model))
     mujoco.mj_resetData(robot.model, robot.data)
 
     workcell = WorkcellBuilder()
@@ -197,14 +197,14 @@ def demo(
         python demo.py --json > results.json     # JSON export
     """
     scenario = _load_demo_scenario(yaml_path)
-    urdf_base = EXAMPLES if yaml_path else (Path(yaml_path).parent if yaml_path else EXAMPLES)
+    model_base = EXAMPLES if yaml_path else (Path(yaml_path).parent if yaml_path else EXAMPLES)
 
     if dry_run:
         console.print(
             Panel(
                 f"[bold]{scenario.name}[/bold]\n"
                 f"{scenario.description or ''}\n"
-                f"Robot: {scenario.robot.urdf}\n"
+                f"Robot: {scenario.robot.model}\n"
                 f"Steps: {len(scenario.task.steps)}",
                 title="Scenario Loaded",
                 border_style="blue",
@@ -219,7 +219,7 @@ def demo(
         return
 
     # Build model
-    model, data, n_act = _build_model(scenario, urdf_base)
+    model, data, n_act = _build_model(scenario, model_base)
     console.print(f"[bold blue]✓ Robot loaded:[/bold blue] {n_act} actuated joints")
     console.print(
         f"[bold blue]✓ Workcell built:[/bold blue] {model.nbody} bodies, {model.ngeom} geoms"

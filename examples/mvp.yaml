@@ -1,10 +1,10 @@
-name: "mvp_panda_demo"
-description: "2-week MVP demo: Panda robot pick-and-place with collision and joint-limit checks"
+name: "mvp_fr3_demo"
+description: "2-week MVP demo: FR3 robot pick-and-place with collision and joint-limit checks"
 
 robot:
-  urdf: "models/fr3_panda.urdf"
+  model: "models/franka_fr3/fr3.xml"
   base_position: [0.0, 0.0, 0.0]
-  end_effector: "panda_hand_tcp"
+  end_effector: "attachment_site"
   joint_config:
     velocity_limits: [2.175, 2.175, 2.175, 2.175, 2.175, 2.175, 2.175]
     acceleration_limits: [15.0, 7.5, 10.0, 12.5, 15.0, 20.0, 20.0]

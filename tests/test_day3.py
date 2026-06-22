@@ -5,16 +5,14 @@ import sys
 sys.path.insert(0, "/home/z0023d3d/project/robotSim/src")
 
 import mujoco
-from yourdfpy import URDF
 
-from robot_validator.robot import _build_mjcf
+from robot_validator.robot import Robot
 from robot_validator.workcell import WorkcellBuilder
 
-urdf = URDF.load("examples/models/fr3_panda.urdf")
-xml = _build_mjcf(urdf, (0, 0, 0))
+robot = Robot.from_mjcf("examples/models/franka_fr3/fr3.xml")
 wb = WorkcellBuilder()
 wb.add_box("table", (0.6, 0.0, 0.0), (1.0, 0.8, 0.05))
-final = wb.merge(xml)
+final = wb.merge(robot.xml)
 model = mujoco.MjModel.from_xml_string(final)
 print(f"Joints: {model.njnt}")
 print(f"Bodies: {model.nbody}")

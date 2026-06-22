@@ -9,7 +9,7 @@ import yaml
 
 @dataclass
 class RobotConfig:
-    urdf: str
+    model: str
     base_position: list[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
     end_effector: str = ""
     joint_config: dict[str, Any] = field(default_factory=dict)
@@ -119,8 +119,9 @@ def from_yaml(path: str | Path) -> ValidationScenario:
     robot_raw = raw.get("robot")
     robot = None
     if robot_raw and isinstance(robot_raw, dict):
+        model_key = "model" if "model" in robot_raw else "urdf"
         robot = RobotConfig(
-            urdf=robot_raw["urdf"],
+            model=robot_raw[model_key],
             base_position=robot_raw.get("base_position", [0.0, 0.0, 0.0]),
             end_effector=robot_raw.get("end_effector", ""),
             joint_config=robot_raw.get("joint_config", {}),
@@ -169,7 +170,7 @@ def to_yaml(scenario: ValidationScenario, path: str | Path) -> None:
     if scenario.robot:
         r = scenario.robot
         doc["robot"] = {
-            "urdf": r.urdf,
+            "model": r.model,
         }
         if r.base_position != [0.0, 0.0, 0.0]:
             doc["robot"]["base_position"] = r.base_position

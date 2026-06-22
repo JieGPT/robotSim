@@ -40,8 +40,8 @@ from robot_validator.validation.kinematics import (
 def test_yaml_roundtrip():
     """Test that YAML scenarios roundtrip correctly."""
     scenario = from_yaml("examples/mvp.yaml")
-    assert scenario.name == "mvp_panda_demo"
-    assert scenario.robot.urdf == "models/fr3_panda.urdf"
+    assert scenario.name == "mvp_fr3_demo"
+    assert scenario.robot.model == "models/franka_fr3/fr3.xml"
     assert len(scenario.task.steps) == 6
     assert len(scenario.criteria) == 2
 
@@ -49,7 +49,7 @@ def test_yaml_roundtrip():
         to_yaml(scenario, f.name)
         roundtrip = from_yaml(f.name)
         assert roundtrip.name == scenario.name
-        assert roundtrip.robot.urdf == scenario.robot.urdf
+        assert roundtrip.robot.model == scenario.robot.model
         assert len(roundtrip.task.steps) == len(scenario.task.steps)
         assert len(roundtrip.criteria) == len(scenario.criteria)
     print("✅ test_yaml_roundtrip: PASSED")
@@ -148,7 +148,7 @@ def test_session_runner():
     results = runner.run("examples/mvp.yaml", visualize=False)
 
     assert isinstance(results, ValidationResult)
-    assert results.name == "mvp_panda_demo"
+    assert results.name == "mvp_fr3_demo"
     assert len(results.steps) == 6
     assert len(results.steps) == 6
 
@@ -167,13 +167,13 @@ def test_wait_step():
     """Test that WAIT steps hold position."""
     import tempfile
 
-    # Use absolute URDF path since temp YAML is in /tmp/
-    urdf = str(Path(__file__).parent.parent / "examples" / "models" / "fr3_panda.urdf")
+    # Use absolute model path since temp YAML is in /tmp/
+    model = str(Path(__file__).parent.parent / "examples" / "models" / "franka_fr3" / "fr3.xml")
 
     yaml_content = f"""
 name: "wait_test"
 robot:
-  urdf: "{urdf}"
+  model: "{model}"
   base_position: [0.0, 0.0, 0.0]
 workcell: {{}}
 task:

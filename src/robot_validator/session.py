@@ -146,19 +146,18 @@ class SessionRunner:
 
         self._results = ValidationResult(name=scenario.name, scenario_path=scenario_file)
 
-        # Resolve URDF path
-        # If it's already absolute, use it directly; otherwise resolve relative to YAML
-        urdf_path = scenario.robot.urdf
-        if not Path(urdf_path).is_absolute():
+        # Resolve model path
+        model_path = scenario.robot.model
+        if not Path(model_path).is_absolute():
             if isinstance(scenario_path, Path):
                 base_dir = scenario_path.parent.resolve()
             else:
                 base_dir = Path(scenario_path).parent.resolve()
-            urdf_path = str(base_dir / scenario.robot.urdf)
+            model_path = str(base_dir / scenario.robot.model)
 
-        # Build robot model from URDF
-        self._robot = Robot.from_urdf(
-            urdf_path,
+        # Build robot model from file (URDF or MJCF)
+        self._robot = Robot.from_model_file(
+            model_path,
             tuple(scenario.robot.base_position),
         )
         mujoco.mj_resetData(self._robot.model, self._robot.data)

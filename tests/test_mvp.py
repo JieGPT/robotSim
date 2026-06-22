@@ -42,8 +42,8 @@ from robot_validator.workcell import WorkcellBuilder
 EXAMPLES = Path(__file__).parent.parent / "examples"
 
 
-def _safe_load_urdf(urdf_path: str) -> tuple[mujoco.MjModel, mujoco.MjData]:
-    robot = Robot.from_urdf(urdf_path)
+def _safe_load_model(model_path: str) -> tuple[mujoco.MjModel, mujoco.MjData]:
+    robot = Robot.from_model_file(model_path)
     workcell = WorkcellBuilder()
     merged = workcell.merge(robot.xml)
     model = mujoco.MjModel.from_xml_string(merged)
@@ -57,9 +57,9 @@ def _safe_load_urdf(urdf_path: str) -> tuple[mujoco.MjModel, mujoco.MjData]:
 
 def test_load_yaml():
     s = from_yaml(str(EXAMPLES / "mvp.yaml"))
-    assert s.name == "mvp_panda_demo"
+    assert s.name == "mvp_fr3_demo"
     assert s.robot is not None
-    assert s.robot.urdf == "models/fr3_panda.urdf"
+    assert s.robot.model == "models/franka_fr3/fr3.xml"
     assert s.workcell is not None
     assert len(s.workcell.fixtures) == 1
     assert len(s.workcell.obstacles) == 1
@@ -75,7 +75,7 @@ def test_yaml_round_trip():
     to_yaml(original, tmp)
     rt = from_yaml(tmp)
     assert rt.name == original.name
-    assert rt.robot.urdf == original.robot.urdf
+    assert rt.robot.model == original.robot.model
     assert len(rt.task.steps) == len(original.task.steps)
     assert len(rt.criteria) == len(original.criteria)
     os.unlink(tmp)
@@ -85,7 +85,7 @@ def test_yaml_missing_optional_fields():
     y = """
 name: "minimal_scenario"
 robot:
-  urdf: "models/fr3_panda.urdf"
+  model: "models/franka_fr3/fr3.xml"
 task:
   steps:
     - move: PTP
@@ -106,7 +106,7 @@ def test_yaml_with_no_criteria():
     y = """
 name: "no_criteria_scenario"
 robot:
-  urdf: "models/fr3_panda.urdf"
+  model: "models/franka_fr3/fr3.xml"
 task:
   steps:
     - move: PTP
@@ -127,7 +127,7 @@ def test_yaml_empty_step():
     y = """
 name: "empty_task"
 robot:
-  urdf: "models/fr3_panda.urdf"
+  model: "models/franka_fr3/fr3.xml"
 """
     with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w", delete=False) as f:
         f.write(y)
@@ -141,19 +141,25 @@ robot:
 # ── 2. Robot Loader ──────────────────────────────────────────────────
 
 
-def test_load_panda():
-    robot = Robot.from_urdf(str(EXAMPLES / "models" / "fr3_panda.urdf"))
+def test_load_fr3_mjcf():
+    robot = Robot.from_mjcf(str(EXAMPLES / "models" / "franka_fr3" / "fr3.xml"))
     assert robot.model is not None
     assert len(robot.joint_names) == 7
 
 
-def test_robot_xml_contains_robot():
-    robot = Robot.from_urdf(str(EXAMPLES / "models" / "fr3_panda.urdf"))
-    assert "panda_link" in robot.xml
+def test_load_fr3_via_dispatcher():
+    robot = Robot.from_model_file(str(EXAMPLES / "models" / "franka_fr3" / "fr3.xml"))
+    assert robot.model is not None
+    assert len(robot.joint_names) == 7
+
+
+def test_robot_xml_contains_fr3():
+    robot = Robot.from_mjcf(str(EXAMPLES / "models" / "franka_fr3" / "fr3.xml"))
+    assert "fr3_link" in robot.xml
 
 
 def test_actuator_positions():
-    robot = Robot.from_urdf(str(EXAMPLES / "models" / "fr3_panda.urdf"))
+    robot = Robot.from_mjcf(str(EXAMPLES / "models" / "franka_fr3" / "fr3.xml"))
     assert robot.data is not None
 
 
@@ -161,7 +167,7 @@ def test_actuator_positions():
 
 
 def test_workcell_merge():
-    robot = Robot.from_urdf(str(EXAMPLES / "models" / "fr3_panda.urdf"))
+    robot = Robot.from_mjcf(str(EXAMPLES / "models" / "franka_fr3" / "fr3.xml"))
     wc = WorkcellBuilder()
     wc.add_box("table", pos=(0.5, 0.0, 0.0), size=(1.0, 0.8, 0.05))
     merged = wc.merge(robot.xml)
@@ -170,11 +176,11 @@ def test_workcell_merge():
     # should have both robot bodies and table body
     body_names = [model.body(i).name for i in range(model.nbody)]
     assert any("table" in b for b in body_names)
-    assert any("panda" in b for b in body_names)
+    assert any("fr3" in b for b in body_names)
 
 
 def test_workcell_large_box():
-    robot = Robot.from_urdf(str(EXAMPLES / "models" / "fr3_panda.urdf"))
+    robot = Robot.from_mjcf(str(EXAMPLES / "models" / "franka_fr3" / "fr3.xml"))
     wc = WorkcellBuilder()
     wc.add_box("huge_table", pos=(0, 0, -0.025), size=(2, 2, 0.05))
     merged = wc.merge(robot.xml)
@@ -183,7 +189,7 @@ def test_workcell_large_box():
 
 
 def test_workcell_with_mesh():
-    robot = Robot.from_urdf(str(EXAMPLES / "models" / "fr3_panda.urdf"))
+    robot = Robot.from_mjcf(str(EXAMPLES / "models" / "franka_fr3" / "fr3.xml"))
     wc = WorkcellBuilder()
     # Use a simple mesh path that won't exist; test should still produce XML
     try:
@@ -233,7 +239,11 @@ def test_ptp_nearby_target():
 
 
 def test_collision_none():
-    model, data = _safe_load_urdf(str(EXAMPLES / "models" / "fr3_panda.urdf"))
+    """FR3 home position (qpos from keyframe) should have no collisions."""
+    model, data = _safe_load_model(str(EXAMPLES / "models" / "franka_fr3" / "fr3.xml"))
+    data.qpos[:] = [0, 0, 0, -1.57079, 0, 1.57079, -0.7853]
+    mujoco.mj_forward(model, data)
+    mujoco.mj_step(model, data)
     cc = CollisionCriterion()
     results = cc.check(model, data)
     assert len(results) == 0
@@ -280,11 +290,11 @@ def test_collision_detection():
 
 
 def test_joint_limits_ok():
-    """Home position should have no violations."""
-    model, data = _safe_load_urdf(str(EXAMPLES / "models" / "fr3_panda.urdf"))
+    """FR3 home position (keyframe) should have no violations."""
+    model, data = _safe_load_model(str(EXAMPLES / "models" / "franka_fr3" / "fr3.xml"))
     criteria = JointLimitCriterion(margin=0.1)
-    # Valid home position — all joints within their ranges
-    data.qpos[:] = [0.0, 0.0, 0.0, -1.2, 0.0, 0.0, 0.0]
+    # FR3 keyframe home position
+    data.qpos[:] = [0, 0, 0, -1.57079, 0, 1.57079, -0.7853]
     mujoco.mj_forward(model, data)
     results = criteria.check(model, data)
     for r in results:
@@ -292,7 +302,7 @@ def test_joint_limits_ok():
 
 
 def test_joint_limits_violation():
-    model, data = _safe_load_urdf(str(EXAMPLES / "models" / "fr3_panda.urdf"))
+    model, data = _safe_load_model(str(EXAMPLES / "models" / "franka_fr3" / "fr3.xml"))
     criteria = JointLimitCriterion(margin=0.1)
     data.qpos[0] = 20.0  # Way beyond
     mujoco.mj_forward(model, data)
@@ -333,7 +343,7 @@ def test_session_run_empty_workcell():
     y = f"""
 name: "empty_workcell_test"
 robot:
-  urdf: "{str(EXAMPLES / "models" / "fr3_panda.urdf")}"
+  model: "{str(EXAMPLES / "models" / "franka_fr3" / "fr3.xml")}"
 workcell:
   fixtures: []
   obstacles: []
@@ -360,7 +370,7 @@ def test_multi_step_pass_then_fail():
     y = f"""
 name: "pass_then_fail"
 robot:
-  urdf: "{str(EXAMPLES / "models" / "fr3_panda.urdf")}"
+  model: "{str(EXAMPLES / "models" / "franka_fr3" / "fr3.xml")}"
 workcell: {{}}
 task:
   steps:
